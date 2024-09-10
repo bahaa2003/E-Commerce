@@ -20,7 +20,7 @@ const brandSchema = mongoose.Schema(
 );
 
 brandSchema.post('init',(doc)=>{
-  doc.logo = process.env.BASE_URL + 'brand/' + doc.logo;
+  doc.logo = process.env.IMG_URL + 'brand/' + doc.logo;
 })
 
 export const BrandModel = mongoose.model("Brand", brandSchema);

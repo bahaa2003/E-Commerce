@@ -21,7 +21,7 @@ const categorySchema = mongoose.Schema(
 );
 
 categorySchema.post('init',(doc)=>{
-  doc.image = process.env.BASE_URL + 'category/' + doc.image;
+  doc.image = process.env.IMG_URL + 'category/' + doc.image;
 })
 
 export const CategoryModel = mongoose.model("Category", categorySchema);
