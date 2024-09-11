@@ -27,7 +27,7 @@ export const createCashOrder = catchError(async (req, res, next) => {
   await order.save();
   //4- increment sold & decrement quantity
   if (order) {
-    let options = cart.cartItems.map((item) => ({
+    let options = cart.cartItems.map(item => ({
       updateOne: {
         filter: { _id: item.product },
         update: { $inc: { quantity: -item.quantity, sold: item.quantity } },
