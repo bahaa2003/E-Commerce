@@ -124,11 +124,10 @@ async function cart(e , res){
     paidAt : Date.now()
   });
   await order.save();
-console.log(order);
 
   //4- increment sold & decrement quantity
   if (order) {
-    let options = cart.cartItems.map((item) => ({
+    let options = cart.cartItems.map(item => ({
       updateOne: {
         filter: { _id: item.product },
         update: { $inc: { sold: item.quantity ,  quantity: -item.quantity } },
