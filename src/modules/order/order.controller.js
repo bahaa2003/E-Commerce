@@ -124,7 +124,7 @@ async function cart(e , res){
     paidAt : Date.now()
   });
   await order.save();
-
+console.log(order);
 
   //4- increment sold & decrement quantity
   if (order) {
