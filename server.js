@@ -4,11 +4,13 @@ import { dbConnection } from "./database/dbConnection.js";
 import morgan from "morgan";
 import { init } from "./src/modules/index.routers.js";
 import cors from "cors";
+import { createOnlineOrder } from "./src/modules/order/order.controller.js";
 const app = express();
 const port = 3000;
 
 // Middleware to parse JSON request bodies
 app.use(cors());
+app.use('/webhook', express.raw({type:'application/json'}),createOnlineOrder);
 app.use(express.json());
 app.use(express.static("uploads"));
 app.use(morgan("dev"));

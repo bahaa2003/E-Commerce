@@ -11,7 +11,7 @@ import {
 const CouponRouter = express.Router();
 
 CouponRouter.route("/")
-  .post(protectedRouts, allowedTo("user"), createCoupon)
+  .post(protectedRouts, allowedTo("admin","user"), createCoupon)
   .get(getAllCoupons);
 
 CouponRouter.route("/:id")

@@ -13,26 +13,24 @@ import {
   updateCategorySchema,
 } from "./category.validation.js";
 import { uploadsSingleFile } from "../../middleware/fileUpload.js";
+import { allowedTo, protectedRouts } from "../auth/auth.controller.js";
 
 const categoryRouter = express.Router();
 
 categoryRouter
   .route("/")
-  .post(
-    uploadsSingleFile("image", "category"),
-    validation(createCategorySchema),
-    createCategory
-  )
+  .post(protectedRouts, allowedTo("admin"),uploadsSingleFile("image", "category"),validation(createCategorySchema),createCategory)
   .get(getAllCategories);
 
 categoryRouter
   .route("/:id")
   .get(validation(getCategorySchema), getCategory)
   .put(
+    protectedRouts, allowedTo("admin"),
     uploadsSingleFile("image", "category"),
     validation(updateCategorySchema),
     updateCategory
   )
-  .delete(validation(getCategorySchema), deleteCategory);
+  .delete(protectedRouts, allowedTo("admin"),validation(getCategorySchema), deleteCategory);
 
 export default categoryRouter;

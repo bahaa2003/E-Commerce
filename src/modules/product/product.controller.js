@@ -8,14 +8,21 @@ import { ApiFeature } from "../../utils/ApiFeatures.js";
 export const createProduct = catchError(async (req, res) => {
   req.body.slug = slugify(req.body.title);
   req.body.imgCover = req.files.imgCover[0].filename;
-  req.body.images = req.files.images.map(obj => obj.filename);
+  req.body.images = req.files.images.map((obj) => obj.filename);
   let result = new productModel(req.body);
   await result.save();
   res.json({ message: "success" });
 });
 
 export const getAllProducts = catchError(async (req, res) => {
-  let apiFeature = new ApiFeature(productModel.find(), req.query)
+  let apiFeature = new ApiFeature(
+    productModel
+      .find()
+      .populate("category", "-createdAt -updatedAt")
+      .populate("subCategory", "-createdAt -updatedAt")
+      .populate("brand", "-createdAt -updatedAt"),
+    req.query
+  )
     .pagination()
     .fields()
     .filter()
@@ -27,7 +34,7 @@ export const getAllProducts = catchError(async (req, res) => {
   res.json({ message: "success", pageNumber: apiFeature.PAGE_NUMBER, result });
 });
 
-export const getProduct = catchError(async (req, res , next) => {
+export const getProduct = catchError(async (req, res, next) => {
   const { id } = req.params;
   let result = await productModel.findById(id);
   !result && next(new AppError("Product not found", 404));
