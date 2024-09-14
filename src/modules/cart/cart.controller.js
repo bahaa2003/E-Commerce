@@ -48,7 +48,7 @@ export const addProductToCart = catchError(async (req, res,next) => {
 
 
 export const removeProductFromCart = catchError(async (req, res, next) => {
-  let result = await CartModel.findOneAndUpdate({user : req.user._id} ,{$pull:{cartItems:{_id:req.params.id}}},{ new: true });
+  let result = await CartModel.findOneAndDelete({user : req.user._id} ,{$pull:{cartItems:{_id:req.params.id}}},{ new: true });
   !result && next(new AppError("Item not found ", 404));
   calcTotalPrice(result)
   if(result.discount){

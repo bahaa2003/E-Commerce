@@ -84,66 +84,119 @@ export const createCheckOutSession = catchError(async (req, res, next) => {
   res.json({ message: "success", session });
 });
 
-export const createOnlineOrder = catchError((request, response) => {
+// export const createOnlineOrder = catchError((request, response) => {
+//   const sig = request.headers['stripe-signature'].toString();
+
+//   let event;
+
+//   try {
+//     event = stripe.webhooks.constructEvent(request.body, sig, whsec_FJzl6pIGMOLdG3WR5tz0kOaSpqz4YVJr);
+//   }
+//   catch (err) {
+//     response.status(400).send(`Webhook Error: ${err.message}`);
+//   }
+
+//   if(event.type == 'checkout.session.completed') {
+//     const paymentIntent = event.data.object;
+//     cart(paymentIntent , response)
+
+//   }else{
+//     console.log(`Unhandled event type ${event.type}`);
+//   }
+// });
+
+
+// async function cart(e , res){
+
+//   let cart = await CartModel.findById(e.client_reference_id);
+//   if(!cart) return next(new AppError("Cart not found", 404))
+
+
+//   let user  = await userModel.findOne({email: e.customer_email})
+//   //3- create order
+//   const order = new OrderModel({
+//     user: user._id,
+//     cartItems: cart.cartItems,
+//     totalOrderPrice: e.amount_total/100,
+//     shippingAddress: e.metadata.shippingAddress,
+//     paymentType : "cart",
+//     isPaid: true,
+//     paidAt : Date.now()
+//   });
+//   await order.save();
+
+//   //4- increment sold & decrement quantity
+//   if (order) {
+//     let options = cart.cartItems.map(item => ({
+//       updateOne: {
+//         filter: { _id: item.product },
+//         update: { $inc: { sold: item.quantity ,  quantity: -item.quantity } },
+//       },
+//     }));
+//     await productModel.bulkWrite(options);
+
+
+//     //5- clear user cart
+//     await CartModel.findByIdAndDelete({user : user._id});
+//     return res.status(201).json({ message: "Success", order });
+//   } else {
+//     return next(
+//       new AppError("Cart not found or not authorized to delete cart"),
+//       404
+//     );
+//   }
+// }
+
+export const createOnlineOrder=catchError(async (request, response) => {
   const sig = request.headers['stripe-signature'].toString();
-
   let event;
-
   try {
-    event = stripe.webhooks.constructEvent(request.body, sig, whsec_FJzl6pIGMOLdG3WR5tz0kOaSpqz4YVJr);
-  }
-  catch (err) {
+    event = stripe.webhooks.constructEvent(request.body, sig, "whsec_FJzl6pIGMOLdG3WR5tz0kOaSpqz4YVJr");
+  } catch (err) {
     response.status(400).send(`Webhook Error: ${err.message}`);
+    return;
   }
 
-  if(event.type == 'checkout.session.completed') {
-    const paymentIntent = event.data.object;
-    cart(paymentIntent , response)
-
+  // Handle the event
+  if(event.type="checkout.session.completed"){
+      cart(event.data.object)
+      console.log("create order here...");
   }else{
-    console.log(`Unhandled event type ${event.type}`);
+      console.log(`unhandled event type ${event.type}`);
   }
-});
+  // Return a 200 response to acknowledge receipt of the event
+  response.send();
+})
 
 
-async function cart(e , res){
 
-  let cart = await CartModel.findById(e.client_reference_id);
-  if(!cart) return next(new AppError("Cart not found", 404))
+async function cart(e,res){
+  let cart= await CartModel.findById(e.client_reference_id)
+  if(!cart) return next(new AppError(`this cart not found`,404))
+  let user= await userModel.findOne({email:e.customer_email})
+  let order= new OrderModel({
+      user:user._id,
+      orderItems:cart.cartItems,
+      shippingAddress:e.metadata.shippingAddress,
+      totalOrderPrice:e.amount_total/100,
+      paymentType:"card",
+      isPaid:true,
+      PaidAt:Date.now()
+  })
+  await order.save()
+  let options=cart.cartItems.map((prod)=>{
+      return (
+          {  
+              updateOne :{
+              "filter":{_id:prod.product},
+              "update": {$inc:{sold:prod.quantity,quantity:-prod.quantity}},
+              }
+          }
+      )
+  })
+  await productModel.bulkWrite(options)
+  await CartModel.findOneAndDelete({user:user._id})
+  res.json({message:"your order created successfully",order})
 
-
-  let user  = await userModel.findOne({email: e.customer_email})
-  //3- create order
-  const order = new OrderModel({
-    user: user._id,
-    cartItems: cart.cartItems,
-    totalOrderPrice: e.amount_total/100,
-    shippingAddress: e.metadata.shippingAddress,
-    paymentType : "cart",
-    isPaid: true,
-    paidAt : Date.now()
-  });
-  await order.save();
-
-  //4- increment sold & decrement quantity
-  if (order) {
-    let options = cart.cartItems.map(item => ({
-      updateOne: {
-        filter: { _id: item.product },
-        update: { $inc: { sold: item.quantity ,  quantity: -item.quantity } },
-      },
-    }));
-    await productModel.bulkWrite(options);
-
-
-    //5- clear user cart
-    await CartModel.findByIdAndDelete({user : user._id});
-    return res.status(201).json({ message: "Success", order });
-  } else {
-    return next(
-      new AppError("Cart not found or not authorized to delete cart"),
-      404
-    );
-  }
 }
 
